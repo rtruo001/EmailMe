@@ -8,12 +8,10 @@ import schedule
 import time
 
 with open('config.json') as json_file:  
-        data = json.load(json_file)
-        AWS_ACCESS_KEY = data['AWSAccessKey']
-        AWS_SECRET_KEY = data['AWSSecretKey']
-        SPOTIFYID = data['SpotifyID']
-        SPOTIFYSECRET = data['SpotifySecret']
-        SpotifyOffset = data['SpotifyOffset']
+    data = json.load(json_file)
+    AWS_ACCESS_KEY = data['AWSAccessKey']
+    AWS_SECRET_KEY = data['AWSSecretKey']
+
 
 class Email(object):  
     def __init__(self, to, subject):
@@ -35,7 +33,7 @@ class Email(object):
         if isinstance(self.to, basestring):
             self.to = [self.to]
         if not from_addr:
-            from_addr = 'me@example.com'
+            from_addr = 'mesorandeee@gmail.com'
         if not self._html and not self._text:
             raise Exception('You must provide a text or html body.')
         if not self._html:
@@ -60,65 +58,71 @@ class Email(object):
         )
 
 
-def sendEmail(t):
-    with open('config.json') as json_file:  
-        data = json.load(json_file)
-        AWS_ACCESS_KEY = data['AWSAccessKey']
-        AWS_SECRET_KEY = data['AWSSecretKey']
-        SPOTIFYID = data['SpotifyID']
-        SPOTIFYSECRET = data['SpotifySecret']
-        SpotifyOffset = data['SpotifyOffset']
+class EmailMe(object):
+    def __init__(self):
+        pass
 
-    # Spotify
-    client_credentials_manager = SpotifyClientCredentials(client_id=SPOTIFYID, client_secret=SPOTIFYSECRET)
-    Spotify = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
+    def startInterval(self):
+        # Every day at 10:00PM
+        schedule.every().day.at("22:00").do(self.sendEmail)
+        while True:
+            schedule.run_pending()
+            time.sleep(60) # wait one minute
 
-    results = Spotify.new_releases(country='US', limit=5, offset=SpotifyOffset)
+    def sendEmail(self):
+        with open('config.json') as json_file:  
+            data = json.load(json_file)
+            SPOTIFYID = data['SpotifyID']
+            SPOTIFYSECRET = data['SpotifySecret']
+            SpotifyOffset = data['SpotifyOffset']
 
-    htmlTextToSend = '<html><body>'
-    for i, t in enumerate(results['albums']['items']):
-        artists = ''
-        first = True
-        for artist in t['artists']:
-            if first:
-                artists += artist['name']
-                first = False
-            else:
-                artists += ', ' + artist['name']
-        print i + 1, t['name'], artists ,t['uri']
-        lineText = '<h3>' + str(i + 1) + '.) ' + t['name'] + '<br>'
-        artistText = artists + '</h3>'
-        imageCovers = '<img src=\"' + t['images'][1]['url'] + '\"><br>'
-        uri = '<h3>' + t['uri'] + '</h3>'
-        htmlTextToSend += lineText + artistText + uri + imageCovers + '<br><br>'  #"%4d %s %s" % (i + 1, t['uri'],  t['name'])
-    htmlTextToSend += '</body></html><br><br>' + 'Randy is awesome'
+        # Spotify
+        client_credentials_manager = SpotifyClientCredentials(client_id=SPOTIFYID, client_secret=SPOTIFYSECRET)
+        Spotify = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 
-    # Send email
-    email = Email(to='randtru@gmail.com', subject='Ran\'z Email Update')  
-    email.html(htmlTextToSend)  # Optional  
-    email.send()  
+        results = Spotify.new_releases(country='US', limit=5, offset=SpotifyOffset)
 
-    # Reset the offset if it reaches max offet, otherwise continue to increment the offset
-    if SpotifyOffset >= 500:
-        SpotifyOffset = 0
-    else:
-        SpotifyOffset += 5
-    # Write the updated offset into the config
-    with open('config.json', 'r+') as json_file:
-        data = json.load(json_file)
+        htmlTextToSend = '<html><body>'
+        for i, t in enumerate(results['albums']['items']):
+            artists = ''
+            first = True
+            for artist in t['artists']:
+                if first:
+                    artists += artist['name']
+                    first = False
+                else:
+                    artists += ', ' + artist['name']
+            print i + 1, t['name'], artists ,t['uri']
+            lineText = '<h3>' + str(i + 1) + '.) ' + t['name'] + '<br>'
+            artistText = artists + '</h3>'
+            imageCovers = '<img src=\"' + t['images'][1]['url'] + '\"><br>'
+            uri = '<h3>' + t['uri'] + '</h3>'
+            htmlTextToSend += lineText + artistText + uri + imageCovers + '<br><br>'  #"%4d %s %s" % (i + 1, t['uri'],  t['name'])
+        htmlTextToSend += '</body></html><br><br>' + 'Randy is awesome'
+        print('\n')
 
-        data['SpotifyOffset'] = SpotifyOffset
+        # Send email
+        email = Email(to='randtru@gmail.com', subject='Ran\'z Email Update')  
+        email.html(htmlTextToSend)  # Optional  
+        email.send()  
 
-        json_file.seek(0)
-        json.dump(data, json_file, indent=4)
-        json_file.truncate()
-    
-    return
+        # Reset the offset if it reaches max offet, otherwise continue to increment the offset
+        if SpotifyOffset >= 500:
+            SpotifyOffset = 0
+        else:
+            SpotifyOffset += 5
+        # Write the updated offset into the config
+        with open('config.json', 'r+') as json_file:
+            data = json.load(json_file)
 
-# schedule.every().day.at("22:27").do(sendEmail,'')
+            data['SpotifyOffset'] = SpotifyOffset
 
-# while True:
-#     schedule.run_pending()
-#     time.sleep(60) # wait one minute
+            json_file.seek(0)
+            json.dump(data, json_file, indent=4)
+            json_file.truncate()
 
-sendEmail(1)
+
+if __name__ == "__main__":
+    app = EmailMe()
+    app.startInterval()
+

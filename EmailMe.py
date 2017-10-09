@@ -88,15 +88,15 @@ class EmailMe(object):
             first = True
             for artist in t['artists']:
                 if first:
-                    artists += artist['name']
+                    artists += artist['name'].encode('utf-8')
                     first = False
                 else:
-                    artists += ', ' + artist['name']
-            print i + 1, t['name'], artists ,t['uri']
-            lineText = '<h3>' + str(i + 1) + '.) ' + t['name'] + '<br>'
+                    artists += ', ' + artist['name'].encode('utf-8')
+            print i + 1, t['name'].encode('utf-8'), artists ,t['uri'].encode('utf-8')
+            lineText = '<h3>' + str(i + 1) + '.) ' + t['name'].encode('utf-8') + '<br>'
             artistText = artists + '</h3>'
-            imageCovers = '<img src=\"' + t['images'][1]['url'] + '\"><br>'
-            uri = '<h3>' + t['uri'] + '</h3>'
+            imageCovers = '<img src=\"' + t['images'][1]['url'].encode('utf-8') + '\"><br>'
+            uri = '<h3>' + t['uri'].encode('utf-8') + '</h3>'
             htmlTextToSend += lineText + artistText + uri + imageCovers + '<br><br>'  #"%4d %s %s" % (i + 1, t['uri'],  t['name'])
         htmlTextToSend += '</body></html><br><br>' + 'Randy is awesome'
         print('\n')
@@ -125,4 +125,5 @@ class EmailMe(object):
 if __name__ == "__main__":
     app = EmailMe()
     app.startInterval()
+    # app.sendEmail()
 

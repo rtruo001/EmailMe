@@ -69,6 +69,27 @@ class EmailMe(object):
             schedule.run_pending()
             time.sleep(60) # wait one minute
 
+    def createHTML(self, results, SpotifyOffset):
+    	htmlTextToSend = '<html><body>'
+        for i, t in enumerate(results['albums']['items']):
+            artists = ''
+            first = True
+            for artist in t['artists']:
+                if first:
+                    artists += artist['name'].encode('utf-8')
+                    first = False
+                else:
+                    artists += ', ' + artist['name'].encode('utf-8')
+            print i + SpotifyOffset, t['name'].encode('utf-8'), artists ,t['uri'].encode('utf-8')
+            lineText = '<h3>' + str(i + SpotifyOffset) + '.) ' + t['name'].encode('utf-8') + '<br>'
+            artistText = artists + '</h3>'
+            imageCovers = '<img src=\"' + t['images'][1]['url'].encode('utf-8') + '\"><br>'
+            uri = '<h3>' + t['uri'].encode('utf-8') + '</h3>'
+            htmlTextToSend += lineText + artistText + uri + imageCovers + '<br><br>'  #"%4d %s %s" % (i + 1, t['uri'],  t['name'])
+        htmlTextToSend += '</body></html><br><br>' + 'Randy is awesome'
+        print('\n')
+        return htmlTextToSend
+
     def sendEmail(self):
         with open('config.json') as json_file:  
             data = json.load(json_file)
@@ -82,24 +103,7 @@ class EmailMe(object):
 
         results = Spotify.new_releases(country='US', limit=5, offset=SpotifyOffset)
 
-        htmlTextToSend = '<html><body>'
-        for i, t in enumerate(results['albums']['items']):
-            artists = ''
-            first = True
-            for artist in t['artists']:
-                if first:
-                    artists += artist['name'].encode('utf-8')
-                    first = False
-                else:
-                    artists += ', ' + artist['name'].encode('utf-8')
-            print i + 1, t['name'].encode('utf-8'), artists ,t['uri'].encode('utf-8')
-            lineText = '<h3>' + str(i + 1) + '.) ' + t['name'].encode('utf-8') + '<br>'
-            artistText = artists + '</h3>'
-            imageCovers = '<img src=\"' + t['images'][1]['url'].encode('utf-8') + '\"><br>'
-            uri = '<h3>' + t['uri'].encode('utf-8') + '</h3>'
-            htmlTextToSend += lineText + artistText + uri + imageCovers + '<br><br>'  #"%4d %s %s" % (i + 1, t['uri'],  t['name'])
-        htmlTextToSend += '</body></html><br><br>' + 'Randy is awesome'
-        print('\n')
+        htmlTextToSend = self.createHTML(results, SpotifyOffset)
 
         # Send email
         email = Email(to='randtru@gmail.com', subject='Ran\'z Email Update')  
@@ -107,7 +111,7 @@ class EmailMe(object):
         email.send()  
 
         # Reset the offset if it reaches max offet, otherwise continue to increment the offset
-        if SpotifyOffset >= 500:
+        if SpotifyOffset >= 100:
             SpotifyOffset = 0
         else:
             SpotifyOffset += 5

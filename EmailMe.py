@@ -115,34 +115,49 @@ class EmailMe(object):
             schedule.run_pending()
             time.sleep(60) # wait one minute
 
+    def divTextLine(self, text, pxFontSize):
+        div = '<div style="font-size: ' + str(pxFontSize) +'px; font-weight: 1;">'
+        div += str(text)
+        div += '</div>'
+        return div
+
+    def divTextLineWithPaddingBottom(self, text, pxFontSize, pxPaddingBottom):
+        div = '<div style="font-size: ' + str(pxFontSize) +'px; font-weight: 1; padding-bottom: ' + str(pxPaddingBottom) + 'px;">'
+        div += str(text)
+        div += '</div>'
+        return div
+
     def createSpotifyHTML(self, results, SpotifyOffset):
-        spotifyHTML = ''
+        spotifyHTML = self.divTextLineWithPaddingBottom('Spotify', 30, 10)
         for i, t in enumerate(results['albums']['items']):
             artists = ''
             first = True
             for artist in t['artists']:
                 if first:
-                    artists += artist['name'].encode('utf-8')
+                    artists += artist['name']
                     first = False
                 else:
-                    artists += ', ' + artist['name'].encode('utf-8')
-            print i + SpotifyOffset, t['name'].encode('utf-8'), artists ,t['uri'].encode('utf-8')
-            lineText = '<h3>' + str(i + SpotifyOffset) + '.) ' + t['name'].encode('utf-8') + '<br>'
-            artistText = artists + '</h3>'
-            imageCovers = '<img src=\"' + t['images'][1]['url'].encode('utf-8') + '\"><br>'
-            uri = '<h3>' + t['uri'].encode('utf-8') + '</h3>'
-            spotifyHTML += lineText + artistText + uri + imageCovers + '<br><br>'  #"%4d %s %s" % (i + 1, t['uri'],  t['name'])
+                    artists += ', ' + artist['name']
+            name = self.divTextLine(str(i + SpotifyOffset) + '.) ' + t['name'], 20)
+            artistText = self.divTextLineWithPaddingBottom(artists, 15, 15)
+            uri = self.divTextLineWithPaddingBottom(t['uri'], 15, 15)
+            imageCovers = self.divTextLineWithPaddingBottom('<img src=\"' + t['images'][1]['url'].encode('utf-8') + '\">', 20, 15)
+            spotifyHTML += name + artistText + uri + imageCovers
+            print(spotifyHTML)
         print('\n')
         return spotifyHTML
 
     def createYelpHTML(self, results, YelpOffset):
-        yelpHTML = ''
+        yelpHTML = self.divTextLineWithPaddingBottom('Yelp', 30, 10)
         for i, t in enumerate(results['businesses']):
-            lineText = '<h3>' + str(i + YelpOffset) + '.) ' + t['name'] + '<br>'
-            rating = 'Rating: ' + str(t['rating'])
-            location = t['location']['display_address'][0] + '<br>' + t['location']['display_address'][1] + '<br>'
-            url = t['url']
-            yelpHTML = lineText + rating + location + url + '<br><br>'
+            name = self.divTextLine(str(i + YelpOffset) + '.) ' + t['name'], 20)
+            url = self.divTextLine('<a href="' + t['url'] + '"> Yelp Link</a>', 15)
+            rating = self.divTextLine('Rating: ' + str(t['rating']), 15)
+            reviewCount = self.divTextLineWithPaddingBottom('Review Count: ' + str(t['review_count']), 15, 15)
+            location = self.divTextLine(t['location']['display_address'][0], 15)
+            location += self.divTextLineWithPaddingBottom(t['location']['display_address'][1], 15, 15)
+            imageCovers = self.divTextLineWithPaddingBottom('<img style="width: 300px; height: 300px;" src=\"' + t['image_url'] + '">', 20, 15)
+            yelpHTML += name + url + rating + reviewCount + location + imageCovers + '<br><br>'
             print(yelpHTML)
         print('\n')
         return yelpHTML
@@ -160,21 +175,23 @@ class EmailMe(object):
         Spotify = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
         SpotifyResults = Spotify.new_releases(country='US', limit=1, offset=SpotifyOffset)
         print 'Querying Spotify New Releases'
-        
+
         # Yelp
         YelpObj = Yelp()
         YelpResults = YelpObj.search("breweries", "Los Angeles", 1, YelpOffset)
+        print('\n')
 
         # Construct the HTML to send
-        self.htmlTextToSend += '<html><body>'
+        # self.htmlTextToSend += '<html><body>'
         self.htmlTextToSend += self.createSpotifyHTML(SpotifyResults, SpotifyOffset)
         self.htmlTextToSend += self.createYelpHTML(YelpResults, YelpOffset)
-        self.htmlTextToSend += '</body></html><br><br>' + 'Randy is awesome'
+        self.htmlTextToSend += self.divTextLine('Randy is awesome', 20)
+        # self.htmlTextToSend += '</body></html>'
 
         # Send email
-        # email = Email(to='randtru@gmail.com', subject='Ran\'z Email Update')  
-        # email.html(self.htmlTextToSend)  # Optional  
-        # email.send()  
+        email = Email(to='randtru@gmail.com', subject='Ran\'z Email Update')  
+        email.html(self.htmlTextToSend)  # Optional  
+        email.send()  
 
         # Reset the offset if it reaches max offet, otherwise continue to increment the offset
         if SpotifyOffset >= 20:

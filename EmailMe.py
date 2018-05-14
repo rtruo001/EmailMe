@@ -218,6 +218,6 @@ class EmailMe(object):
 
 if __name__ == "__main__":
     app = EmailMe()
-    # app.startInterval()
-    app.sendEmail()
+    app.startInterval()
+    # app.sendEmail()
 

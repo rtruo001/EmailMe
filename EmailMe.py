@@ -138,7 +138,7 @@ class EmailMe(object):
                     first = False
                 else:
                     artists += ', ' + artist['name']
-            name = self.divTextLine(str(i + SpotifyOffset) + '.) ' + t['name'], 20)
+            name = self.divTextLine(str(i+1 + SpotifyOffset) + '.) ' + t['name'], 20)
             artistText = self.divTextLineWithPaddingBottom(artists, 15, 15)
             uri = self.divTextLineWithPaddingBottom(t['uri'], 15, 15)
             imageCovers = self.divTextLineWithPaddingBottom('<img src=\"' + t['images'][1]['url'].encode('utf-8') + '\">', 20, 15)
@@ -150,7 +150,7 @@ class EmailMe(object):
     def createYelpHTML(self, results, YelpOffset):
         yelpHTML = self.divTextLineWithPaddingBottom('Yelp', 30, 10)
         for i, t in enumerate(results['businesses']):
-            name = self.divTextLine(str(i + YelpOffset) + '.) ' + t['name'], 20)
+            name = self.divTextLine(str(i+1 + YelpOffset) + '.) ' + t['name'], 20)
             url = self.divTextLine('<a href="' + t['url'] + '"> Yelp Link</a>', 15)
             rating = self.divTextLine('Rating: ' + str(t['rating']), 15)
             reviewCount = self.divTextLineWithPaddingBottom('Review Count: ' + str(t['review_count']), 15, 15)
@@ -170,6 +170,8 @@ class EmailMe(object):
             SpotifyOffset = data['SpotifyOffset']
             YelpOffset = data['YelpOffset']
 
+        self.htmlTextToSend = ""
+
         # Spotify
         client_credentials_manager = SpotifyClientCredentials(client_id=SPOTIFYID, client_secret=SPOTIFYSECRET)
         Spotify = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
@@ -182,24 +184,22 @@ class EmailMe(object):
         print('\n')
 
         # Construct the HTML to send
-        # self.htmlTextToSend += '<html><body>'
         self.htmlTextToSend += self.createSpotifyHTML(SpotifyResults, SpotifyOffset)
         self.htmlTextToSend += self.createYelpHTML(YelpResults, YelpOffset)
         self.htmlTextToSend += self.divTextLine('Randy is awesome', 20)
-        # self.htmlTextToSend += '</body></html>'
 
         # Send email
         email = Email(to='randtru@gmail.com', subject='Ran\'z Email Update')  
-        email.html(self.htmlTextToSend)  # Optional  
+        email.html(self.htmlTextToSend.encode('UTF-8'))
         email.send()  
 
         # Reset the offset if it reaches max offet, otherwise continue to increment the offset
-        if SpotifyOffset >= 20:
+        if SpotifyOffset > 20:
             SpotifyOffset = 0
         else:
             SpotifyOffset += 1
 
-        if YelpOffset >= 100:
+        if YelpOffset > 100:
             YelpOffset = 0
         else:
             YelpOffset += 1

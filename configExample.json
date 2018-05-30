@@ -1,0 +1,11 @@
+{
+    "AWSAccessKey": "ExampleKey", 
+    "AWSSecretKey": "ExampleKey",
+    "SpotifySecret": "ExampleKey", 
+    "SpotifyID": "ExampleID",
+    "Yelp_API_Key": "ExampleKey", 
+    "YelpOffset": 0, 
+    "SpotifyOffset": 5, 
+    "EmailToSend": "emailToSend@example.com",
+    "EmailToReceive": "emailToReceive@example.com"
+}

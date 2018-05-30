@@ -20,11 +20,16 @@ except ImportError:
     from urllib import quote
     from urllib import urlencode
 
+# Initializes all the keys and ids from the config file.
 with open('config.json') as json_file:  
     data = json.load(json_file)
     AWS_ACCESS_KEY = data['AWSAccessKey']
     AWS_SECRET_KEY = data['AWSSecretKey']
     YELP_API_KEY = data['Yelp_API_Key']
+    SPOTIFYID = data['SpotifyID']
+    SPOTIFYSECRET = data['SpotifySecret']
+    EMAILTOSEND = data['EmailToSend']
+    EMAILTORECEIVE = data['EmailToReceive']
 
 
 # Yelp API, this portion of code used this link as reference
@@ -77,7 +82,7 @@ class Email(object):
         if isinstance(self.to, basestring):
             self.to = [self.to]
         if not from_addr:
-            from_addr = 'mesorandeee@gmail.com'
+            from_addr = EMAILTOSEND
         if not self._html and not self._text:
             raise Exception('You must provide a text or html body.')
         if not self._html:
@@ -92,7 +97,7 @@ class Email(object):
         )
 
         return connection.send_email(
-            "mesorandeee@gmail.com",
+            EMAILTOSEND,
             self.subject,
             None,
             self.to,
@@ -108,6 +113,7 @@ class EmailMe(object):
     def __init__(self):
         self.htmlTextToSend = ""
 
+    # Sets the interval to send an email at the selected time.
     def startInterval(self):
         # Every day at 10:00PM
         schedule.every().day.at("22:00").do(self.sendEmail)
@@ -115,18 +121,21 @@ class EmailMe(object):
             schedule.run_pending()
             time.sleep(60) # wait one minute
 
+    # Creates a div
     def divTextLine(self, text, pxFontSize):
         div = '<div style="font-size: ' + str(pxFontSize) +'px; font-weight: 1;">'
-        div += str(text)
+        div += text
         div += '</div>'
         return div
 
+    # Creates a div with a padding on the bottom
     def divTextLineWithPaddingBottom(self, text, pxFontSize, pxPaddingBottom):
         div = '<div style="font-size: ' + str(pxFontSize) +'px; font-weight: 1; padding-bottom: ' + str(pxPaddingBottom) + 'px;">'
-        div += str(text)
+        div += text
         div += '</div>'
         return div
 
+    # Spotify's HTML
     def createSpotifyHTML(self, results, SpotifyOffset):
         spotifyHTML = self.divTextLineWithPaddingBottom('Spotify', 30, 10)
         for i, t in enumerate(results['albums']['items']):
@@ -141,12 +150,13 @@ class EmailMe(object):
             name = self.divTextLine(str(i+1 + SpotifyOffset) + '.) ' + t['name'], 20)
             artistText = self.divTextLineWithPaddingBottom(artists, 15, 15)
             uri = self.divTextLineWithPaddingBottom(t['uri'], 15, 15)
-            imageCovers = self.divTextLineWithPaddingBottom('<img src=\"' + t['images'][1]['url'].encode('utf-8') + '\">', 20, 15)
+            imageCovers = self.divTextLineWithPaddingBottom('<img src=\"' + t['images'][1]['url'] + '\">', 20, 15)
             spotifyHTML += name + artistText + uri + imageCovers
             print(spotifyHTML)
         print('\n')
         return spotifyHTML
 
+    # Yelp's HTML
     def createYelpHTML(self, results, YelpOffset):
         yelpHTML = self.divTextLineWithPaddingBottom('Yelp', 30, 10)
         for i, t in enumerate(results['businesses']):
@@ -162,11 +172,10 @@ class EmailMe(object):
         print('\n')
         return yelpHTML
 
+    # Sends an email containing the HTML of both Spotify and Yelp
     def sendEmail(self):
         with open('config.json') as json_file:  
             data = json.load(json_file)
-            SPOTIFYID = data['SpotifyID']
-            SPOTIFYSECRET = data['SpotifySecret']
             SpotifyOffset = data['SpotifyOffset']
             YelpOffset = data['YelpOffset']
 
@@ -187,10 +196,11 @@ class EmailMe(object):
         self.htmlTextToSend += self.createSpotifyHTML(SpotifyResults, SpotifyOffset)
         self.htmlTextToSend += self.createYelpHTML(YelpResults, YelpOffset)
         self.htmlTextToSend += self.divTextLine('Randy is awesome', 20)
+        self.htmlTextToSend.encode('utf-8')
 
         # Send email
-        email = Email(to='randtru@gmail.com', subject='Ran\'z Email Update')  
-        email.html(self.htmlTextToSend.encode('UTF-8'))
+        email = Email(to=EMAILTORECEIVE, subject='Ran\'z Email Update')  
+        email.html(self.htmlTextToSend)
         email.send()  
 
         # Reset the offset if it reaches max offet, otherwise continue to increment the offset

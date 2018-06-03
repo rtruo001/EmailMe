@@ -4,6 +4,10 @@ import json
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
+from datetime import datetime
+from pytz import timezone
+import pytz
+
 import schedule
 import time
 
@@ -152,8 +156,8 @@ class EmailMe(object):
             uri = self.divTextLineWithPaddingBottom(t['uri'], 15, 15)
             imageCovers = self.divTextLineWithPaddingBottom('<img src=\"' + t['images'][1]['url'] + '\">', 20, 15)
             spotifyHTML += name + artistText + uri + imageCovers
+            spotifyHTML.encode('utf-8')
             print(spotifyHTML)
-        print('\n')
         return spotifyHTML
 
     # Yelp's HTML
@@ -168,8 +172,8 @@ class EmailMe(object):
             location += self.divTextLineWithPaddingBottom(t['location']['display_address'][1], 15, 15)
             imageCovers = self.divTextLineWithPaddingBottom('<img style="width: 300px; height: 300px;" src=\"' + t['image_url'] + '">', 20, 15)
             yelpHTML += name + url + rating + reviewCount + location + imageCovers + '<br><br>'
+            yelpHTML.encode('utf-8')
             print(yelpHTML)
-        print('\n')
         return yelpHTML
 
     # Sends an email containing the HTML of both Spotify and Yelp
@@ -180,6 +184,12 @@ class EmailMe(object):
             YelpOffset = data['YelpOffset']
 
         self.htmlTextToSend = ""
+
+        date_format='%m/%d/%Y %H:%M:%S %Z'
+        date = datetime.now(tz=pytz.utc)
+        print 'Current date & time is:', date.strftime(date_format)
+        date = date.astimezone(timezone('US/Pacific'))
+        print 'Local date & time is  :', date.strftime(date_format)
 
         # Spotify
         client_credentials_manager = SpotifyClientCredentials(client_id=SPOTIFYID, client_secret=SPOTIFYSECRET)
@@ -194,6 +204,7 @@ class EmailMe(object):
 
         # Construct the HTML to send
         self.htmlTextToSend += self.createSpotifyHTML(SpotifyResults, SpotifyOffset)
+        print('\n')
         self.htmlTextToSend += self.createYelpHTML(YelpResults, YelpOffset)
         self.htmlTextToSend += self.divTextLine('Randy is awesome', 20)
         self.htmlTextToSend.encode('utf-8')
